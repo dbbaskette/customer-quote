@@ -1,21 +1,67 @@
 package com.insurancemegacorp.repository;
 
-import com.insurancemegacorp.model.Customer;
+import com.insurancemegacorp.model.SoftDeletable;
+import org.springframework.data.jpa.repository.support.JpaEntityInformation;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.Map;
+import javax.persistence.EntityManager;
+import java.io.Serializable;
+import java.util.List;
 import java.util.Optional;
 
-public class CustomerRepositoryImpl {
+public class CustomerRepositoryImpl<T extends SoftDeletable, ID extends Serializable>
+        extends SimpleJpaRepository<T, ID> implements BaseRepository<T, ID> {
 
-    private final Map<String, Customer> customers = new HashMap<>();
+    private final EntityManager entityManager;
 
-    public CustomerRepositoryImpl() {
-        customers.put("123", new Customer("123", "John Doe", 30));
-        customers.put("456", new Customer("456", "Jane Smith", 22));
+    public CustomerRepositoryImpl(JpaEntityInformation<T, ?> entityInformation, EntityManager entityManager) {
+        super(entityInformation, entityManager);
+        this.entityManager = entityManager;
     }
 
-    public Optional<Customer> findById(String id) {
-        return Optional.ofNullable(customers.get(id));
+    @Override
+    @Transactional
+    public void softDelete(T entity) {
+        entity.setActive(false);
+        save(entity);
+    }
+
+    @Override
+    @Transactional
+    public void softDeleteById(ID id) {
+        findById(id).ifPresent(this::softDelete);
+    }
+
+    @Override
+    @Transactional
+    public void softDeleteAll(Iterable<? extends T> entities) {
+        entities.forEach(this::softDelete);
+    }
+
+    @Override
+    @Transactional
+    public void softDeleteAll() {
+        findAll().forEach(this::softDelete);
+    }
+
+    @Override
+    public List<T> findByActiveTrue() {
+        return findAll();
+    }
+
+    @Override
+    public Optional<T> findByIdAndActiveTrue(ID id) {
+        return findById(id).filter(SoftDeletable::isActive);
+    }
+
+    @Override
+    public long countByActiveTrue() {
+        return findAll().stream().filter(SoftDeletable::isActive).count();
+    }
+
+    @Override
+    public boolean existsByIdAndActiveTrue(ID id) {
+        return findById(id).filter(SoftDeletable::isActive).isPresent();
     }
 }
