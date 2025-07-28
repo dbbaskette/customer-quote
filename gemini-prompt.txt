@@ -1,0 +1,2 @@
+Prompt loaded from CODE_ASSISTANT_PROMPT.md
+Project scope defined in PROJECT.md

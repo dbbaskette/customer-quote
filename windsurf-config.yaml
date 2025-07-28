@@ -1,0 +1,8 @@
+project_name: "customer-quote"
+prompt_path: "./CODE_ASSISTANT_PROMPT.md"
+project_meta: "./PROJECT.md"
+language: java
+tools:
+  - spring
+  - ai
+  - cli
